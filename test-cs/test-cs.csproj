@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RootNamespace>test_cs</RootNamespace>
+
+    <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Static</NativeLib>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+
+</Project>
