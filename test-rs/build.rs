@@ -1,12 +1,12 @@
 
 const LIB_ROOT: &str = "test-cs/bin/Release/net7.0/win-x64/publish/";
-const DEP_LIB_ROOT: &str = "C:/Users/patrick/.nuget/packages/runtime.win-x64.microsoft.dotnet.ilcompiler/7.0.5/sdk/";
+const ILCOMPILER_PACKAGE_SDK: &str = "runtime.win-x64.microsoft.dotnet.ilcompiler/7.0.5/sdk/";
 
 fn main() -> anyhow::Result<()> {
 	build_cs_project()?;
+	add_nuget_package_root_search_path()?;
 
 	println!("cargo:rustc-link-search=native={LIB_ROOT}");
-	println!("cargo:rustc-link-search=native={DEP_LIB_ROOT}");
 
 	println!("cargo:rustc-link-lib=test-cs");
 
@@ -26,6 +26,22 @@ fn main() -> anyhow::Result<()> {
 
 
 use std::process::Command;
+
+fn add_nuget_package_root_search_path() -> anyhow::Result<()> {
+	let output = Command::new("dotnet")
+		.args(&["nuget", "locals", "global-packages", "--list"])
+		.current_dir("../test-cs")
+		.output()?;
+
+	let output_str = String::from_utf8_lossy(&output.stdout);
+
+	let (_, path) = output_str.trim().split_once(": ")
+		.expect("Unexpected output from dotnet nuget locals");
+
+	println!("cargo:rustc-link-search=native={path}/{ILCOMPILER_PACKAGE_SDK}");
+
+	Ok(())
+}
 
 fn build_cs_project() -> anyhow::Result<()> {
 	let status = Command::new("dotnet")
