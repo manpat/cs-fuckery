@@ -1,12 +1,9 @@
 
-const LIB_ROOT: &str = "test-cs/bin/Release/net7.0/win-x64/publish/";
 const ILCOMPILER_PACKAGE_SDK: &str = "runtime.win-x64.microsoft.dotnet.ilcompiler/7.0.5/sdk/";
 
 fn main() -> anyhow::Result<()> {
 	build_cs_project()?;
 	add_nuget_package_root_search_path()?;
-
-	println!("cargo:rustc-link-search=native={LIB_ROOT}");
 
 	println!("cargo:rustc-link-lib=test-cs");
 
@@ -19,8 +16,6 @@ fn main() -> anyhow::Result<()> {
 	println!("cargo:rustc-link-lib=static=System.IO.Compression.Native.Aot");
 	println!("cargo:rustc-link-arg=/INCLUDE:NativeAOT_StaticInitialization");
 
-	println!("cargo:warning=Running build.rs");
-
 	Ok(())
 }
 
@@ -30,7 +25,6 @@ use std::process::Command;
 fn add_nuget_package_root_search_path() -> anyhow::Result<()> {
 	let output = Command::new("dotnet")
 		.args(&["nuget", "locals", "global-packages", "--list"])
-		.current_dir("../test-cs")
 		.output()?;
 
 	let output_str = String::from_utf8_lossy(&output.stdout);
@@ -44,8 +38,18 @@ fn add_nuget_package_root_search_path() -> anyhow::Result<()> {
 }
 
 fn build_cs_project() -> anyhow::Result<()> {
+	let out_dir = std::env::var_os("OUT_DIR").unwrap();
+	let out_dir = out_dir.to_str().unwrap();
+
 	let status = Command::new("dotnet")
-		.args(&["publish", "-r", "win-x64", "-c", "Release"])
+		.args(&[
+			"publish",
+			"-r", "win-x64",
+			"-c", "Release",
+			&format!("-p:OutputPath={out_dir}/bin/"),
+			&format!("-p:BaseIntermediateOutputPath={out_dir}/obj/"),
+			&format!("-p:PublishDir={out_dir}/publish/"),
+		])
 		.current_dir("../test-cs")
 		.status()?;
 
@@ -64,6 +68,8 @@ fn build_cs_project() -> anyhow::Result<()> {
 			println!("cargo:rerun-if-changed={}", path.display());
 		}
 	}
+
+	println!("cargo:rustc-link-search=native={out_dir}/publish");
 
 	Ok(())
 }
